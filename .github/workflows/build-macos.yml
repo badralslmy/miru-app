@@ -11,7 +11,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive' # مهم جداً لأن مشروع Miru يعتمد على موديلات فرعية (مثل .isar)
+          submodules: 'recursive' # مهم جداً لأن مشروع Miru يعتمد على موديلات فرعية
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -23,15 +23,20 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.24.0' # استخدام نسخة مستقرة وحديثة متوافقة مع بناء الماك الجديد
+          flutter-version: '3.24.0' # إصدار مستقر ومتوافق
 
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build macOS App (Release)
+      - name: Enable macOS support
+        run: flutter config --enable-macos-desktop
+
+      - name: Build macOS App (Release without signing)
         run: |
-          flutter config --enable-macos-desktop
-          flutter build macos --release --no-codesign
+          # تمرير أمر البناء وتعطيل التوقيع البرمجي عبر معايير Xcode المباشرة
+          flutter build macos --release --config-only
+          cd macos
+          xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" PROVISIONING_PROFILE_SPECIFIER=""
 
       - name: Compress App Bundle
         run: |
