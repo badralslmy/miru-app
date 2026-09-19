@@ -1,0 +1,45 @@
+name: Build Miru macOS
+
+on:
+  workflow_dispatch: # لتشغيل البناء يدوياً في أي وقت بضغطة زر
+
+jobs:
+  build-macos:
+    runs-on: macos-14 # استخدام معالجات أبل سيليكون الحديثة للبناء السريع والتوافق الأعلى
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive' # مهم جداً لأن مشروع Miru يعتمد على موديلات فرعية (مثل .isar)
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.24.0' # استخدام نسخة مستقرة وحديثة متوافقة مع بناء الماك الجديد
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build macOS App (Release)
+        run: |
+          flutter config --enable-macos-desktop
+          flutter build macos --release --no-codesign
+
+      - name: Compress App Bundle
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r Miru-macOS.zip Miru.app
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Miru-macOS-Build
+          path: build/macos/Build/Products/Release/Miru-macOS.zip
